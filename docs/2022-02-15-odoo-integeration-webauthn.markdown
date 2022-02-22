@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: default
 title:  "odoo与webauthn集成"
 date:   2022-02-15 12:12:12 +0800
 categories: odoo webauthn
@@ -20,30 +20,31 @@ categories: odoo webauthn
 
 由于FIDO2认证需要网站工作在**TLS/HTTPS** 下, 所以本地测试需要准备:
 
-&nbsp;1. 通过openssl生成网站需要的证书和私钥:`certificate.pem` 以及 `key.pem`, 方法请*自行~~百~~(goo)~~度~~(gle)* , 在nginx配置中会用到  
-&nbsp;2. 搭建一个nginx反向代理, 关键的配置如下, 其中的 `proxy_set_header X-Forwarded-HTTPS on` 是解决odoo redirect 操作导致浏览器使用回HTTP请求的问题
+1. 通过openssl生成网站需要的证书和私钥:`certificate.pem` 以及 `key.pem`, 方法请*自行~~百~~(goo)~~度~~(gle)* , 在nginx配置中会用到  
+2. 搭建一个nginx反向代理, 关键的配置如下, 其中的 `proxy_set_header X-Forwarded-HTTPS on` 是解决odoo redirect 操作导致浏览器使用回HTTP请求的问题
 
-{% highlight nginx %}
-  server {
-       listen 443 ssl;
-       proxy_set_header X-Forwarded-Proto $scheme;
-       ssl_certificate /usr/local/nginx/cert/certificate.pem; #cert
-       ssl_certificate_key /usr/local/nginx/cert/key.pem; #key
-       ssl_session_timeout  5m;    #time out
-       ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;    #supported algorithm
-       ssl_protocols TLSv1 TLSv1.1 TLSv1.2;    #supported tls version
-       ssl_prefer_server_ciphers on;   #use server prefered
-       ...
+    ```nginx
+        server {
+            listen 443 ssl;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            ssl_certificate /usr/local/nginx/cert/certificate.pem; #cert
+            ssl_certificate_key /usr/local/nginx/cert/key.pem; #key
+            ssl_session_timeout  5m;    #time out
+            ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;    #supported algorithm
+            ssl_protocols TLSv1 TLSv1.1 TLSv1.2;    #supported tls version
+            ssl_prefer_server_ciphers on;   #use server prefered
+            ...
 
-        location / {
-           proxy_pass http://localhost:8069;
-           proxy_set_header X-Forwarded-HTTPS on;
-       }
-   
-  }
-{% endhighlight %}
+                location / {
+                proxy_pass http://localhost:8069;
+                proxy_set_header X-Forwarded-HTTPS on;
+            }
+        
+        }
+    ```
 
-&nbsp;3. 在odoo的系统参数中配置`web.base.url` 以及 `web.base.url.freeze`
+
+3. 在odoo的系统参数中配置`web.base.url` 以及 `web.base.url.freeze`
     
     web.base.url -> https://localhost  
     web.base.url.freeze -> True  
